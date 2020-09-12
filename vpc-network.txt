@@ -1,0 +1,66 @@
+vpc-networking
+#Create a VPC Network using commandline
+
+#Delete the Firewall Rules
+   gcloud compute firewall-rules delete
+
+#Delete the default network
+   gcloud compute networks delete default
+
+#Create an auto mode VPC network with firewall rules
+   gcloud compute networks create mynetwork --subnet-mode=auto
+   gcloud compute firewall-rules create privatenet-allow-icmp-ssh-rdp --direction=INGRESS --priority=1000 --network=privatenet --action=ALLOW --rules=icmp,tcp:22,tcp:3389 --source-ranges=0.0.0.0/0
+
+#Create a VM instance in us-central1
+   gcloud compute instances create mynet-us-vm --zone=us-central1-c --machine-type=n1-standard-1 --image-family=debian-10 --image-project=debian-cloud --boot-disk-size=10GB --boot-disk-type=pd-standard --boot-disk-device-name=mynet-us-vm
+
+#Create a VM instance in europe-wset1
+   gcloud compute instances create mynet-eu-vm --zone=europe-west1-c --machine-type=n1-standard-1 --image-family=debian-10 --image-project=debian-cloud --boot-disk-size=10GB --boot-disk-type=pd-standard --boot-disk-device-name=mynet-eu-vm
+#verify connectivity gfor the vm instances
+#To test connectivity to mynet-eu-vm's internal IP, run the following command, replacing mynet-eu-vm's internal IP:
+   ping -c 3 <Enter mynet-eu-vm's internal IP here>
+
+
+#You can ping mynet-eu-vm's internal IP because of the allow-internal firewall rule.
+#Repeat the same test by running the following:
+   ping -c 3 mynet-eu-vm
+
+#To test connectivity to mynet-eu-vm's external IP, run the following command, replacing mynet-eu-vm's external IP:
+   ping -c 3 <Enter mynet-eu-vm's external IP here>
+
+# Createa custom mode networks
+   gcloud compute networks subnets create managementnet --network=managementsubnet-us --region=us-central1 --range=10.130.0.0/20
+
+#create a privatenet ntwork
+#To create the privatenet network, run the following command:
+   gcloud compute networks create privatenet --subnet-mode=custom
+
+#To create the privatesubnet-us subnet, run the following command:
+   gcloud compute networks subnets create privatesubnet-us --network=privatenet --region=us-central1 --range=172.16.0.0/24
+
+#To create the privatesubnet-eu subnet, run the following command:
+   gcloud compute networks subnets create privatesubnet-eu --network=privatenet --region=europe-west1 --range=172.20.0.0/20
+
+#To list the available VPC networks, run the following command:
+   gcloud compute networks list
+
+#To list the available VPC subnets (sorted by VPC network), run the following command:
+   gcloud compute networks subnets list --sort-by=NETWORK
+
+#Create the firewall rules for managementnet
+   gcloud compute firewall-rules create managementnet-allow-icmp-ssh-rdp --direction=INGRESS --priority=1000 --network=managementnet --action=ALLOW --rules=icmp,tcp:22,tcp:3389 --source-ranges=0.0.0.0/0
+
+#Create the firewall rules for managementnet
+   gcloud compute firewall-rules create privatenet-allow-icmp-ssh-rdp --direction=INGRESS --priority=1000 --network=privatenet --action=ALLOW --rules=icmp,tcp:22,tcp:3389 --source-ranges=0.0.0.0/0
+
+#To list all the firewall rules (sorted by VPC network), run the following command:
+   gcloud compute firewall-rules list --sort-by=NETWORK
+
+#Create the managementnet-us-vm instance
+   gcloud compute instances create managementnet-us-vm --zone=us-central1-c --machine-type=f1-micro --subnet=privatesubnet-us --image-family=debian-10 --image-project=debian-cloud --boot-disk-size=10GB --boot-disk-type=pd-standard --boot-disk-device-name=managementnet-us-vm
+
+#Create the privatenet-us-vm instance
+   gcloud compute instances create privatenet-us-vm --zone=us-central1-c --machine-type=f1-micro --subnet=privatesubnet-us --image-family=debian-10 --image-project=debian-cloud --boot-disk-size=10GB --boot-disk-type=pd-standard --boot-disk-device-name=privatenet-us-vm
+
+#To list all the VM instances (sorted by zone), run the following command:
+   gcloud compute instances list --sort-by=ZONE
